@@ -761,11 +761,13 @@ int SecCamera::startPreview(void)
                            V4L2_CID_CAMERA_CHECK_DATALINE, m_chk_dataline);
     CHECK(ret);
 
+#ifndef M5MO_CAMERA
     if (m_camera_id == CAMERA_ID_FRONT) {
         /* VT mode setting */
         ret = fimc_v4l2_s_ctrl(m_cam_fd, V4L2_CID_CAMERA_VT_MODE, m_vtmode);
         CHECK(ret);
     }
+#endif
 
     /* start with all buffers in queue */
     for (int i = 0; i < MAX_BUFFERS; i++) {
@@ -834,6 +836,16 @@ int SecCamera::startPreview(void)
     }
 
     m_flag_camera_start = 1;
+
+#ifdef M5MO_CAMERA
+    if (m_camera_id == CAMERA_ID_FRONT) {
+        /* Activate preview mode */
+        LOGV("activate preview mode for front camera");
+        ret = fimc_v4l2_s_ctrl(m_cam_fd, V4L2_CID_CAM_PREVIEW_ONOFF,
+                               1);
+        CHECK(ret);
+    }
+#endif
 
     ret = fimc_v4l2_s_parm(m_cam_fd, &m_streamparm);
     CHECK(ret);
@@ -911,22 +923,24 @@ int SecCamera::startRecord(void)
     LOGI("%s: m_recording_width = %d, m_recording_height = %d\n",
          __func__, m_recording_width, m_recording_height);
 
-#ifndef M5MO_CAMERA
     if (m_camera_id == CAMERA_ID_BACK) {
         // Some properties for back camera video recording
         setISO(ISO_MOVIE);
         setMetering(METERING_MATRIX);
         setBatchReflection();
-#endif
         ret = fimc_v4l2_s_fmt(m_cam_fd2, m_recording_width,
                               m_recording_height, V4L2_PIX_FMT_NV12T, 0);
-#ifndef M5MO_CAMERA
     }
     else {
+#ifndef M5MO_CAMERA
         ret = fimc_v4l2_s_fmt(m_cam_fd2, m_recording_height,
                               m_recording_width, V4L2_PIX_FMT_NV12T, 0);
-    }
+#else
+        ret = fimc_v4l2_s_fmt(m_cam_fd2, m_recording_width,
+                              m_recording_height, V4L2_PIX_FMT_NV12T, 0);
 #endif
+    }
+
     CHECK(ret);
 
     ret = fimc_v4l2_s_ctrl(m_cam_fd, V4L2_CID_CAMERA_FRAME_RATE,
