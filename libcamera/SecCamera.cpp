@@ -2060,8 +2060,8 @@ int SecCamera::setFlashMode(int flash_mode)
     }
 
     if (m_params->flash_mode != flash_mode) {
-        m_params->flash_mode = flash_mode;
         if (m_flag_camera_start) {
+            m_params->flash_mode = flash_mode;
             if (fimc_v4l2_s_ctrl(m_cam_fd, V4L2_CID_CAMERA_FLASH_MODE, flash_mode) < 0) {
                 LOGE("ERR(%s):Fail on V4L2_CID_CAMERA_FLASH_MODE", __func__);
                 return -1;
